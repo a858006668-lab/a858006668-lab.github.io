@@ -356,7 +356,7 @@ function showGuide() { document.getElementById('guideOverlay').classList.add('sh
 
 function closeGuide() { document.getElementById('guideOverlay').classList.remove('show'); }
 function confirmAdd() {
-  closeGuide();
+  closeGuide(); 
   var ua = navigator.userAgent.toLowerCase();
   // 微信内置浏览器 → 用 replace 跳转（避免部分拦截弹窗）
   if (ua.indexOf("micromessenger") !== -1) {
