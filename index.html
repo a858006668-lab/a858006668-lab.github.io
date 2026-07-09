@@ -1,0 +1,375 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>添加好友</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        .container { max-width: 420px; width: 100%; }
+        .card {
+            background: rgba(255,255,255,0.70);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px 24px 32px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.30);
+        }
+        .avatar-img {
+            width: 88px; height: 88px; border-radius: 50%;
+            object-fit: cover; display: block; margin: 0 auto 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            border: 3px solid #fff;
+        }
+        .title {
+            font-size: 28px; font-weight: 700; color: #1a1a2e;
+            margin-bottom: 28px; letter-spacing: 2px;
+            font-family: "ZCOOL QingKe HuangYou", "Noto Serif SC", serif;
+        }
+        .btn-add-wrap { text-align: center; }
+        .btn-add {
+            animation: breathe 2.5s ease-in-out infinite;
+            display: inline-flex; align-items: center; gap: 14px;
+            padding: 14px 48px 14px 38px;
+            background: linear-gradient(135deg, #07c160 0%, #05a34e 100%);
+            color: #fff; font-size: 18px; font-weight: 600;
+            border: none; border-radius: 60px; cursor: pointer;
+            text-decoration: none; letter-spacing: 1.5px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .btn-add:hover { animation: none; transform: translateY(-2px); box-shadow: 0 10px 40px rgba(7,193,96,0.5); }
+        .btn-add:active { transform: scale(0.96); }
+        .btn-add img { width: 26px; height: 26px; display: block; }
+
+        /* ── 弹窗 ── */
+        .overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 999;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+        .overlay.show { display: flex; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes slideUp { from { transform:translateY(40px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+        .modal {
+            background: rgba(255,255,255,0.78);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 20px 20px 0 0;
+            padding: 24px 22px 20px;
+            max-width: 420px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.35s ease-out;
+            border-top: 1px solid rgba(255,255,255,0.40);
+        }
+        .modal-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 16px; padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .modal-header .warn-icon {
+            width: 26px; height: 26px; min-width: 26px;
+            background: #07c160; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 15px; font-weight: 700;
+        }
+        .modal-header span { font-size: 17px; font-weight: 700; color: #1a1a2e; }
+
+        .modal-body { text-align: left; }
+
+        /* ── 温馨提示（置顶） ── */
+        .warm-tips {
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            border-radius: 14px;
+            padding: 16px 18px;
+            border: 1px solid #bbf7d0;
+            margin-bottom: 18px;
+        }
+        .warm-tips h4 {
+            font-size: 15px; font-weight: 700; color: #15803d;
+            margin-bottom: 6px;
+        }
+        .warm-tips p {
+            font-size: 13.5px; color: #166534; line-height: 1.7;
+        }
+        .warm-tips .badge {
+            display: inline-block;
+            background: #dcfce7; color: #16a34a;
+            font-size: 12px; font-weight: 600;
+            padding: 2px 10px; border-radius: 20px;
+            margin-right: 4px;
+        }
+
+        /* ── 步骤 ── */
+        .step-list { margin-bottom: 16px; }
+        .step {
+            display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;
+        }
+        .step:last-child { margin-bottom: 0; }
+        .step-num {
+            width: 26px; height: 26px; min-width: 26px;
+            background: #e8f5e9; color: #07c160; font-weight: 700;
+            font-size: 13px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .step-body h4 { font-size: 14px; font-weight: 600; color: #1a1a2e; line-height: 1.4; }
+        .step-body p { font-size: 13px; color: #6b7280; line-height: 1.6; margin-top: 2px; }
+        .step-body .hl-blue {
+            display: inline-block; background: #eff6ff; color: #2563eb;
+            padding: 0 6px; border-radius: 4px; font-weight: 600;
+        }
+
+        /* ── 底部风险提示（淡化处理） ── */
+        .risk-notice {
+            background: #fefce8;
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1px solid #fde68a;
+            margin-bottom: 18px;
+            display: flex; gap: 10px; align-items: flex-start;
+        }
+        .risk-notice .risk-icon {
+            font-size: 16px; line-height: 1.5; flex-shrink: 0;
+        }
+        .risk-notice .risk-text {
+            font-size: 13px; color: #92400e; line-height: 1.7;
+        }
+        .risk-notice .risk-text .mute {
+            color: #a16207; font-weight: 500;
+        }
+
+        /* ── 按钮 ── */
+        .btn-wrapper {
+            margin: 20px 0 16px;
+            text-align: center;
+        }
+        .modal-btn-confirm {
+            position: relative;
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%;
+            padding: 17px 24px;
+            background: linear-gradient(135deg, #07c160, #05a34e, #07c160, #059669);
+            background-size: 300% 100%;
+            color: #fff; font-size: 18px; font-weight: 700;
+            border: none; border-radius: 16px; cursor: pointer;
+            letter-spacing: 2px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: btnShimmer 3s ease-in-out infinite;
+            box-shadow: 0 4px 20px rgba(7,193,96,0.35);
+        }
+        .modal-btn-confirm::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: translateX(-100%);
+            animation: btnSweep 2.5s ease-in-out infinite;
+        }
+        .modal-btn-confirm::after {
+            content: '';
+            position: absolute; inset: -2px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(7,193,96,0.4), rgba(5,163,78,0.4), rgba(7,193,96,0.4));
+            z-index: -1;
+            filter: blur(8px);
+            opacity: 0.6;
+            animation: btnGlow 2s ease-in-out infinite alternate;
+        }
+        .modal-btn-confirm:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 8px 32px rgba(7,193,96,0.5);
+            animation: none;
+        }
+        .modal-btn-confirm:hover::before { animation: none; }
+        .modal-btn-confirm:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 8px rgba(7,193,96,0.3);
+        }
+        .modal-btn-confirm .btn-icon {
+            display: inline-block;
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+        .modal-btn-confirm:hover .btn-icon {
+            transform: translateX(4px);
+        }
+        @keyframes btnShimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes btnSweep {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+            100% { transform: translateX(100%); }
+        }
+        @keyframes btnGlow {
+            0% { opacity: 0.4; filter: blur(6px); }
+            100% { opacity: 0.8; filter: blur(12px); }
+        }
+        .modal-btn-confirm:active { transform: scale(0.97); }
+
+        .footer-links {
+            text-align: center; margin-top: 14px;
+            font-size: 12px; color: #9ca3af;
+        }
+        .footer-links a {
+            color: #2563eb; text-decoration: underline;
+        }
+        .footer-links .dot-sep {
+            margin: 0 6px; color: #d1d5db;
+        }
+
+        .footer-brand {
+            text-align: center; padding: 20px 0 4px;
+            color: #9ca3af; font-size: 13px;
+        }
+        .gold-text {
+            background: linear-gradient(90deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: goldShine 3s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes goldShine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes breathe {
+            0% { box-shadow: 0 4px 20px rgba(7,193,96,0.35); }
+            50% { box-shadow: 0 4px 44px rgba(7,193,96,0.55), 0 0 70px rgba(7,193,96,0.12); }
+            100% { box-shadow: 0 4px 20px rgba(7,193,96,0.35); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <img src="avatar.jpg" alt="头像" class="avatar-img">
+        <div class="title">和尘同光</div>
+        <div class="btn-add-wrap">
+            <button class="btn-add" onclick="showGuide()">
+                <img src="tencent-qq.svg" alt="">
+                点击添加好友
+            </button>
+        </div>
+    </div>
+    <div class="footer-brand">© 2026 <span class="gold-text">内研社圈</span> · 咨询服务页</div>
+</div>
+
+<div class="overlay" id="guideOverlay" onclick="if(event.target===this)closeGuide()">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="warn-icon">✓</div>
+            <span>好友添加指南</span>
+        </div>
+        <div class="modal-body">
+
+            <!-- ===== ❶ 温馨提示 · 置顶 ===== -->
+            <div class="warm-tips">
+                <h4>💡 温馨提示</h4>
+                <p>
+                    此提示是 <span class="badge">QQ 系统保护机制</span> 自动触发，<strong>并非账号存在问题</strong>。
+                    按以下两步操作即可正常发送好友申请，无需担心 🎯
+                </p>
+            </div>
+
+            <!-- ===== ❷ 操作步骤 ===== -->
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                        <h4>点击「<span class="hl-blue">了解详情</span>」</h4>
+                        <p>不要点"放弃添加"，直接点<strong>蓝色按钮</strong>进入详情页。</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                        <h4>点击「<span class="hl-blue">确定添加</span>」</h4>
+                        <p>详情页底部会有"确定添加"或"继续添加"按钮，点击即可 ✅</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                        <h4>等待对方通过即可 ✨</h4>
+                        <p>好友申请会正常发出，我看到后会第一时间通过！</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="modal-btn-confirm" onclick="confirmAdd()">
+                <span class="btn-icon">👋</span>
+                继续添加好友
+                <span style="font-size:18px;">→</span>
+            </button>
+
+            <!-- ===== ❸ 安全提示（补充信息） ===== -->
+            <div style="margin-top:20px;"></div>
+            <div class="risk-notice">
+                <div class="risk-icon">⚠️</div>
+                <div class="risk-text">
+                    <span class="mute">安全提示：</span>对方账号曾被他人举报存在异常行为，
+                    你可点击"了解详情"查看详细信息及解决办法。
+                </div>
+            </div>
+
+            <div class="footer-links">
+                如果没反应，请点击右上角 <b>···</b> 选择「在浏览器中打开」
+                <span class="dot-sep">|</span>
+                <a href="https://qm.qq.com/q/KFi1zfKBua">或直接点击此处跳转</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+  // 检测 QQ 内置浏览器 → 直接跳转 qm.qq.com（绕过安全提示）
+  var ua = navigator.userAgent.toLowerCase();
+  if (ua.indexOf('qq') !== -1 || ua.indexOf('mqqbrowser') !== -1) {
+    window.location.replace('https://qm.qq.com/q/KFi1zfKBua');
+  }
+function showGuide() { document.getElementById('guideOverlay').classList.add('show'); }
+
+function closeGuide() { document.getElementById('guideOverlay').classList.remove('show'); }
+function confirmAdd() {
+  closeGuide();
+  var ua = navigator.userAgent.toLowerCase();
+  // 微信内置浏览器 → 用 replace 跳转（避免部分拦截弹窗）
+  if (ua.indexOf("micromessenger") !== -1) {
+    window.location.replace("https://qm.qq.com/q/KFi1zfKBua");
+    return;
+  }
+  // 非微信 → 尝试协议唤起 QQ
+  window.location.href = "mqqwpa://im/chat?chat_type=wpa&uin=3682622787&version=1";
+  setTimeout(function() {
+    window.location.href = "https://qm.qq.com/q/KFi1zfKBua";
+  }, 1000);
+}
+</script>
+</body>
+</html>
+
